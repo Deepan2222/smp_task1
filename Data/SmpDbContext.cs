@@ -15,6 +15,10 @@ public class SmpDbContext(DbContextOptions<SmpDbContext> options) : DbContext(op
     public DbSet<User> Users { get; set; }
     public DbSet<Student> Students { get; set; }
     public DbSet<StudentEnrollment> StudentEnrollments { get; set; }
+    public DbSet<Subject> Subjects { get; set; }
+    public DbSet<ClassSubjectMapping> ClassSubjectMappings { get; set; }
+    public DbSet<Exam> Exams { get; set; }
+    public DbSet<StudentMark> StudentMarks { get; set; }
     public DbSet<Employee> Employees { get; set; }
     public DbSet<StudentDocument> StudentDocuments { get; set; }
     public DbSet<StudentAttendance> StudentAttendances { get; set; }
@@ -101,9 +105,74 @@ public class SmpDbContext(DbContextOptions<SmpDbContext> options) : DbContext(op
                 .HasFilter("[IsCurrent] = 1 AND [IsDeleted] = 0");
             entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
             entity.Property(x => x.IsCurrent).HasDefaultValue(false);
+            entity.Property(x => x.GroupName).HasDefaultValue("General");
             entity.Property(x => x.IsDeleted).HasDefaultValue(false);
             entity.HasOne(x => x.Student).WithMany(x => x.StudentEnrollments)
                 .HasForeignKey(x => x.StudentId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Subject>(entity =>
+        {
+            entity.HasIndex(x => x.SubjectCode).IsUnique();
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint("CK_Subject_MaximumMarks",
+                    "[MaximumMarks] > 0");
+                table.HasCheckConstraint("CK_Subject_MinimumPassMarks",
+                    "[MinimumPassMarks] >= 0 AND [MinimumPassMarks] <= [MaximumMarks]");
+            });
+        });
+
+        modelBuilder.Entity<ClassSubjectMapping>(entity =>
+        {
+            entity.HasIndex(x => new
+            {
+                x.ClassName,
+                x.SectionName,
+                x.GroupName,
+                x.AcademicYear,
+                x.SubjectId
+            }).IsUnique();
+            entity.Property(x => x.GroupName).HasDefaultValue("General");
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.HasOne(x => x.Subject).WithMany(x => x.ClassSubjectMappings)
+                .HasForeignKey(x => x.SubjectId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Exam>(entity =>
+        {
+            entity.HasIndex(x => new
+            {
+                x.ExamName,
+                x.ClassName,
+                x.SectionName,
+                x.GroupName,
+                x.AcademicYear
+            }).IsUnique();
+            entity.Property(x => x.GroupName).HasDefaultValue("General");
+            entity.Property(x => x.IsPublished).HasDefaultValue(false);
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<StudentMark>(entity =>
+        {
+            entity.HasIndex(x => new { x.StudentEnrollmentId, x.ExamId, x.SubjectId })
+                .IsUnique();
+            entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(x => x.IsDeleted).HasDefaultValue(false);
+            entity.ToTable(table => table.HasCheckConstraint(
+                "CK_StudentMark_MarksObtained", "[MarksObtained] >= 0"));
+            entity.HasOne(x => x.StudentEnrollment).WithMany(x => x.StudentMarks)
+                .HasForeignKey(x => x.StudentEnrollmentId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Exam).WithMany(x => x.StudentMarks)
+                .HasForeignKey(x => x.ExamId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Subject).WithMany(x => x.StudentMarks)
+                .HasForeignKey(x => x.SubjectId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.EnteredByEmployee).WithMany(x => x.EnteredStudentMarks)
+                .HasForeignKey(x => x.EnteredByEmployeeId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Employee>(entity =>
