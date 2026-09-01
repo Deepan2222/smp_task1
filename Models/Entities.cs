@@ -151,12 +151,126 @@ public class StudentEnrollment
     [Required, MaxLength(20)]
     public string AcademicYear { get; set; } = null!;
 
+    [Required, MaxLength(50)]
+    public string GroupName { get; set; } = "General";
+
     public bool IsCurrent { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
 
     public Student? Student { get; set; }
+    public ICollection<StudentMark> StudentMarks { get; set; } = [];
+}
+
+public class Subject
+{
+    [Key]
+    public int SubjectId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string SubjectCode { get; set; } = null!;
+
+    [Required, MaxLength(100)]
+    public string SubjectName { get; set; } = null!;
+
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal MaximumMarks { get; set; }
+
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal MinimumPassMarks { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public ICollection<ClassSubjectMapping> ClassSubjectMappings { get; set; } = [];
+    public ICollection<StudentMark> StudentMarks { get; set; } = [];
+}
+
+public class ClassSubjectMapping
+{
+    [Key]
+    public int ClassSubjectMappingId { get; set; }
+
+    [Required, MaxLength(30)]
+    public string ClassName { get; set; } = null!;
+
+    [MaxLength(20)]
+    public string? SectionName { get; set; }
+
+    [Required, MaxLength(50)]
+    public string GroupName { get; set; } = "General";
+
+    [Required, MaxLength(20)]
+    public string AcademicYear { get; set; } = null!;
+
+    [ForeignKey(nameof(Subject))]
+    public int SubjectId { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public Subject? Subject { get; set; }
+}
+
+public class Exam
+{
+    [Key]
+    public int ExamId { get; set; }
+
+    [Required, MaxLength(100)]
+    public string ExamName { get; set; } = null!;
+
+    [Required, MaxLength(30)]
+    public string ClassName { get; set; } = null!;
+
+    [MaxLength(20)]
+    public string? SectionName { get; set; }
+
+    [Required, MaxLength(50)]
+    public string GroupName { get; set; } = "General";
+
+    [Required, MaxLength(20)]
+    public string AcademicYear { get; set; } = null!;
+
+    [Column(TypeName = "date")]
+    public DateOnly ExamDate { get; set; }
+
+    public bool IsPublished { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public ICollection<StudentMark> StudentMarks { get; set; } = [];
+}
+
+public class StudentMark
+{
+    [Key]
+    public int StudentMarkId { get; set; }
+
+    [ForeignKey(nameof(StudentEnrollment))]
+    public int StudentEnrollmentId { get; set; }
+
+    [ForeignKey(nameof(Exam))]
+    public int ExamId { get; set; }
+
+    [ForeignKey(nameof(Subject))]
+    public int SubjectId { get; set; }
+
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal MarksObtained { get; set; }
+
+    [ForeignKey(nameof(EnteredByEmployee))]
+    public int EnteredByEmployeeId { get; set; }
+
+    [MaxLength(250)]
+    public string? Remarks { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public StudentEnrollment? StudentEnrollment { get; set; }
+    public Exam? Exam { get; set; }
+    public Subject? Subject { get; set; }
+    public Employee? EnteredByEmployee { get; set; }
 }
 
 public class Employee
@@ -192,6 +306,7 @@ public class Employee
     public City? City { get; set; }
     public ICollection<StudentAttendance> MarkedStudentAttendances { get; set; } = [];
     public ICollection<EmployeeAttendance> EmployeeAttendances { get; set; } = [];
+    public ICollection<StudentMark> EnteredStudentMarks { get; set; } = [];
 }
 
 public class StudentDocument
