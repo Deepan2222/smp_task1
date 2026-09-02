@@ -54,6 +54,9 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<EmployeeAttendanceService>();
 builder.Services.AddScoped<StudentRegistrationService>();
 builder.Services.AddScoped<StudentAttendanceService>();
+builder.Services.AddScoped<SubjectService>();
+builder.Services.AddScoped<StudentMarksService>();
+builder.Services.AddScoped<StudentMarksReportService>();
 builder.Services.AddScoped<LocationService>();
 
 var app = builder.Build();
